@@ -8,7 +8,7 @@ from typing import Final
 import os
 from dotenv import load_dotenv
 from discord import Intents, Client, Message
-from responses import get_response
+from responses import get_response, get_link
 
 # 0. Carregar o Token do bot de algum lugar seguro
 # Define o diretório base onde o arquivo .env está localizado
@@ -31,27 +31,49 @@ client: Client = Client(intents=intents)
 # 2. Funcionalidade da mensagem
 # Função assíncrona para enviar mensagens de resposta
 async def send_message(message: Message, user_message: str) -> None:
+    # Inicializa a variável para armazenar a segunda substring
+    second_substring: str = ""
+
+    # Tenta extrair a segunda substring, caso exista
+    try:
+        second_substring = user_message.split(" ", 1)[1].split(" ", 1)[0]
+    except IndexError:
+        pass  # Deixa a variável vazia se não houver substrings suficientes
+
     # Verifica se a mensagem do usuário está vazia
     if not user_message:
         print('(Mensagem estava vazia porque os intents não foram habilitados provavelmente)')
         return
 
-    # Verifica se a mensagem é privada (começa com "?")
-    if is_private := user_message[0] == '?':
-        user_message = user_message[1:] # Remove o "?" do início da mensagem
-
-    try:
-        # Obtém a resposta para a mensagem do usuário usando a função get_response
-        response: str = get_response(user_message)
-
-        # Envia a resposta como mensagem privada ou no canal público
-        if is_private:
-            await message.author.send(response)
+    if user_message.lower().startswith("!baixar"):
+        # Usa a variável second_substring no comando "!baixar"
+        if second_substring:
+            link_response = get_link(second_substring)
+            await message.channel.send(link_response)
         else:
+            await message.channel.send("Erro: Nenhum argumento encontrado para o comando '!baixar'.")
+        return
+
+    # Verifica se a mensagem é privada (começa com "?")
+    if user_message.startswith("?"):
+        try:
+            # Obtém a resposta para a mensagem do usuário
+            response: str = get_response(user_message)
+            # Envia a resposta como mensagem privada
+            await message.author.send(response)
+        except Exception as e:
+            # Captura erros ao enviar mensagens privadas
+            print(f"Erro ao enviar mensagem privada: {e}")
+
+    else:
+        try:
+            # Obtém a resposta para a mensagem do usuário
+            response: str = get_response(user_message)
+            # Envia a resposta no canal público
             await message.channel.send(response)
-    except Exception as e:
-        # Captura e exibe erros que possam ocorrer durante o envio da mensagem
-        print(e)
+        except Exception as e:
+            # Captura erros ao enviar mensagens no canal
+            print(f"Erro ao enviar mensagem no canal: {e}")
 
 # 3. Lidando com o startup do bot
 # Evento chamado quando o bot está pronto e conectado ao Discord
