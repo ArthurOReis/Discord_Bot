@@ -7,8 +7,8 @@
 from typing import Final
 import os
 from dotenv import load_dotenv
-from discord import Intents, Client, Message
-from responses import get_response, get_link
+from discord import Intents, Client, Message, File
+from responses import get_response, get_link, get_media
 
 # 0. Carregar o Token do bot de algum lugar seguro
 # Define o diretório base onde o arquivo .env está localizado
@@ -36,7 +36,7 @@ async def send_message(message: Message, user_message: str) -> None:
 
     # Tenta extrair a segunda substring, caso exista
     try:
-        second_substring = user_message.split(" ", 1)[1].split(" ", 1)[0]
+        second_substring = user_message[len("!baixar"):].strip()
     except IndexError:
         pass  # Deixa a variável vazia se não houver substrings suficientes
 
@@ -48,6 +48,23 @@ async def send_message(message: Message, user_message: str) -> None:
     if user_message.lower().startswith("!baixar"):
         # Usa a variável second_substring no comando "!baixar"
         if second_substring:
+
+            file_path = get_media(second_substring)
+            if file_path.startswith("Erro"):
+                await message.channel.send(file_path)
+            else:
+                await message.channel.send(file=File(file_path))
+
+            # Verifica se o arquivo existe antes de deletar
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    print(f"Arquivo {file_path} deletado com sucesso.")
+                except Exception as e:
+                    print(f"Erro ao deletar o arquivo {file_path}: {e}")
+            else:
+                print(f"Arquivo {file_path} não encontrado para exclusão.")
+
             link_response = get_link(second_substring)
             await message.channel.send(link_response)
         else:
