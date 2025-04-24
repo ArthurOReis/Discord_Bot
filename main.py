@@ -6,27 +6,19 @@
 # responses: Módulo personalizado para lidar com respostas
 from typing import Final
 import os
-from dotenv import load_dotenv
-from discord import Intents, Client, Message, File
+from discord import Message, File
+from startup import load_token, initialize_client
 from responses import get_response, get_link, get_media
 
 # 0. Carregar o Token do bot de algum lugar seguro
 # Define o diretório base onde o arquivo .env está localizado
 BASEDIR = os.path.abspath(os.path.dirname('.venv/.env'))
 
-# Carrega as variáveis de ambiente do arquivo .env
-load_dotenv(os.path.join(BASEDIR, '.env'))
+# Carrega o token do bot usando o módulo startup
+TOKEN: Final[str] = load_token(os.path.join(BASEDIR, '.env'))
 
-# Obtém o token do bot armazenado na variável de ambiente "TOKEN"
-TOKEN: Final[str] = os.getenv('TOKEN')
-
-# 1. Setup do bot
-# Configura os intents do bot, que definem quais eventos ele pode escutar
-intents: Intents = Intents.default()
-intents.message_content = True # Habilita o acesso ao conteúdo das mensagens
-
-# Cria uma instância do cliente do Discord com os intents configurados
-client: Client = Client(intents=intents)
+# Inicializa o cliente do Discord
+client = initialize_client()
 
 # 2. Funcionalidade da mensagem
 # Função assíncrona para enviar mensagens de resposta
